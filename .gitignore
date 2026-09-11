@@ -1,0 +1,26 @@
+# Machine-local configuration
+config.local.json
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local workflow/registry safety copies
+*.backup-*
+*.pre-*
+
+# Local legacy roleplay history; not used by the runtime
+docs/yinyue_history.md
+
+# Build artifacts
+*.zip
+*.tar.gz
+*.sha256
+
+# Editor and OS files
+.DS_Store
+*.swp
+*.swo

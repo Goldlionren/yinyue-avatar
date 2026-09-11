@@ -1,0 +1,46 @@
+{
+  "workflow_id": "Krea2_YINYUE_cosplay01",
+  "purpose": "text_to_image",
+  "description": "用于根据描述生成银月完整造型",
+  "workflow_path": "D:\\AI\\YinyueAvatar\\workflows\\Krea2_YINYUE_cosplay01.json",
+  "slots": {
+    "prompt": {
+      "node_id": "63",
+      "input_name": "value",
+      "type": "string"
+    },
+    "aspect_ratio": {
+      "node_id": "49",
+      "input_name": "aspect_ratio",
+      "type": "enum",
+      "default": "9:16 (Portrait Widescreen)",
+      "allowed": [
+        "9:16 (Portrait Widescreen)",
+        "3:4 (Portrait Standard)",
+        "2:3 (Portrait Tall)",
+        "1:1 (Square)"
+      ]
+    },
+    "megapixels": {
+      "node_id": "49",
+      "input_name": "megapixels",
+      "type": "number",
+      "default": 1.5
+    },
+    "seed": {
+      "addresses": [
+        {
+          "node_id": "92",
+          "input_name": "noise_seed"
+        },
+        {
+          "node_id": "93",
+          "input_name": "noise_seed"
+        }
+      ],
+      "type": "integer",
+      "minimum": 10000000,
+      "maximum": 99999999
+    }
+  }
+}

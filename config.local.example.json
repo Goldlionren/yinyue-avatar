@@ -1,0 +1,16 @@
+{
+  "comfyui": {
+    "base_url": "http://127.0.0.1:8188"
+  },
+  "telegram": {
+    "default_channel": "telegram"
+  },
+  "runtime": {
+    "state_dir": "~/.hermes/state/yinyue-avatar",
+    "launcher": "auto"
+  },
+  "execution": {
+    "mode": "mcp",
+    "default_target": "comfy_3060"
+  }
+}

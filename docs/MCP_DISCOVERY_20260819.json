@@ -1,0 +1,43 @@
+{
+  "verified_at": "2026-08-19T00:47:43Z",
+  "local_timezone_date": "2026-08-19",
+  "target": "comfy_3060",
+  "operation_scope": "read-only MCP smoke test; no slot mutation, generation, output fetch, or Telegram",
+  "connection": "PASS",
+  "server_info": {
+    "comfyui_running": true,
+    "comfyui_url": "http://127.0.0.1:8188",
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "comfy_cli_version": "1.16.0"
+  },
+  "workflow": {
+    "path": "D:\\AI\\YinyueAvatar\\workflows\\Krea2_YINYUE_cosplay01.json",
+    "format": "frontend",
+    "list_workflow_slots": "PASS",
+    "slot_count": 43,
+    "validate_workflow": "PASS",
+    "converted_from_ui": true,
+    "converted_node_count": 18,
+    "spends_credits": false,
+    "semantic_bindings": {
+      "prompt": "63.value",
+      "aspect_ratio": "49.aspect_ratio",
+      "megapixels": "49.megapixels",
+      "seed": "111.seed -> 93.noise_seed + 92.noise_seed"
+    },
+    "seed_node": {
+      "address": "111.seed",
+      "type": "SeedNode INT",
+      "control_after_generate": "randomize",
+      "manifest_exposed": true
+    }
+  },
+  "mutation_policy": {
+    "one_random_seed_per_transaction": true,
+    "same_seed_connected_to_both_samplers": true,
+    "frontend_control_after_generate": "randomize marker is discarded by MCP conversion",
+    "seed_generator_node": 111,
+    "control_plane_seed_override": "111.seed only; 8-digit integer"
+  },
+  "comfy_5090": "NOT_RETESTED_IN_THIS_CORRECTION; remains fail-closed from the prior no-route audit"
+}

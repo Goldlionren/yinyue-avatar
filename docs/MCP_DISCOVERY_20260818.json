@@ -1,0 +1,110 @@
+{
+  "audited_at": "2026-08-18T13:55:51Z",
+  "protocol_version": "2025-06-18",
+  "servers": {
+    "comfy_5090": {
+      "transport": "ssh stdio",
+      "host": "Admin@192.168.1.200",
+      "mcp_command": "F:\\AI\\ComfyMCP\\start-comfy-mcp.cmd",
+      "connection": "FAIL_NO_ROUTE",
+      "schema_source": "Hermes current private MCP schema cache; 39 functional tools plus 4 MCP utility tools, with the same name/schema surface as comfy_3060 but a distinct cache fingerprint",
+      "workflow_inspection": "NOT_TESTED"
+    },
+    "comfy_3060": {
+      "transport": "ssh stdio",
+      "host": "ryjdl@192.168.100.211",
+      "mcp_command": "D:\\AI\\ComfyMCP\\start-comfy-mcp.cmd",
+      "connection": "PASS",
+      "server_info": {
+        "comfy_cli_version": "1.16.0",
+        "comfyui_running": true,
+        "comfyui_url": "http://127.0.0.1:8188",
+        "gpu": "NVIDIA GeForce RTX 3060",
+        "vram_bytes": 12884901888,
+        "workspace": "C:\\Users\\ryjdl\\Documents\\comfy\\ComfyUI"
+      },
+      "workflow_inspection": {
+        "path": "D:\\AI\\YinyueAvatar\\workflows\\Krea2_YINYUE_cosplay01.json",
+        "validate_workflow": "PASS",
+        "spends_credits": false,
+        "list_workflow_slots": "FAIL_WORKFLOW_NOT_FRONTEND_FORMAT",
+        "desired_cosplay_path_exists": false,
+        "desired_edit_path_exists": false
+      }
+    }
+  },
+  "tool_names": [
+    "server_info", "auth_status", "auth_login", "run_workflow", "generate_image",
+    "list_partner_models", "partner_model_schema", "partner_generate",
+    "emit_partner_workflow", "run_template", "job", "system_stats", "free_memory",
+    "fetch_outputs", "launch_comfyui", "stop_comfyui", "restart_comfyui",
+    "update_comfyui", "switch_comfyui_version", "install_node", "get_logs",
+    "discover", "which", "project", "search_templates", "get_template",
+    "fetch_template", "nodes", "node_dependencies", "workflow_deps", "search_models",
+    "download_model", "download", "upload_file", "validate_workflow",
+    "list_workflow_slots", "list_workflow_notes", "set_workflow_slot",
+    "vary_workflow", "list_resources", "read_resource", "list_prompts", "get_prompt"
+  ],
+  "selected_schemas": {
+    "run_workflow": {
+      "required": ["workflow_path"],
+      "properties": {
+        "workflow_path": "string",
+        "wait": "boolean default true",
+        "timeout_seconds": "number default 110",
+        "confirm_spend": "boolean default false"
+      }
+    },
+    "job": {
+      "properties": {
+        "action": "string default status",
+        "prompt_id": "string",
+        "timeout_seconds": "number|null"
+      }
+    },
+    "fetch_outputs": {
+      "required": ["prompt_id", "out_dir"],
+      "properties": {
+        "prompt_id": "string",
+        "out_dir": "string",
+        "url_only": "boolean default false",
+        "inline_images": "boolean default false"
+      }
+    },
+    "upload_file": {
+      "required": ["paths"],
+      "properties": {"paths": "array[string]", "overwrite": "boolean default false"}
+    },
+    "validate_workflow": {
+      "required": ["workflow_path"],
+      "properties": {"workflow_path": "string"}
+    },
+    "list_workflow_slots": {
+      "required": ["workflow_path"],
+      "properties": {"workflow_path": "string"}
+    },
+    "set_workflow_slot": {
+      "required": ["workflow_path", "overrides"],
+      "properties": {
+        "workflow_path": "string",
+        "overrides": "array[string|{address,value}]",
+        "stdout": "boolean default true"
+      }
+    },
+    "vary_workflow": {
+      "required": ["workflow_path", "slots"],
+      "properties": {
+        "workflow_path": "string",
+        "slots": "array[string|{address,values}]",
+        "out_dir": "string|null"
+      }
+    }
+  },
+  "path_and_output_semantics": {
+    "workflow_path": "resolved on the Windows MCP server host",
+    "upload_file_source": "must be an absolute path on the MCP server host",
+    "fetch_outputs_disk_copy": "written under out_dir on the MCP server host",
+    "fetch_outputs_inline_images": "returned as MCP ImageContent; Hermes core caches it locally and exposes MEDIA:/absolute/path",
+    "reliable_hermes_local_result": "call fetch_outputs with inline_images=true, then pass the returned local MEDIA path to avatarctl commit"
+  }
+}

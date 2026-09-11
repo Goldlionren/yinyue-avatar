@@ -1,0 +1,41 @@
+{
+  "tested_at": "2026-08-18T15:45:50Z",
+  "local_date": "2026-08-19",
+  "target": "comfy_3060",
+  "transaction_id": "37e49ded705f414eafec60ea54b470a2",
+  "original_workflow_path": "D:\\AI\\YinyueAvatar\\workflows\\Krea2_YINYUE_cosplay01.json",
+  "variant_workflow_path": "D:\\AI\\YinyueAvatar\\temp\\37e49ded705f414eafec60ea54b470a2\\Krea2_YINYUE_cosplay01_000.json",
+  "original_workflow_after_generation": {
+    "unchanged": true,
+    "49.aspect_ratio": "9:16 (Portrait Widescreen)",
+    "49.megapixels": 1.5,
+    "93.noise_seed": 0,
+    "92.noise_seed": 0
+  },
+  "seed": 1851192331636250198,
+  "slot_verification": {
+    "matched": true,
+    "63.value": "matched transaction prompt",
+    "49.aspect_ratio": "3:4 (Portrait Standard)",
+    "49.megapixels": 2,
+    "93.noise_seed": 1851192331636250198,
+    "92.noise_seed": 1851192331636250198
+  },
+  "prompt_id": "30657a0d-7af9-401d-906a-c42c38d624c7",
+  "submit_count": 1,
+  "run_workflow_wait": false,
+  "job_completed": true,
+  "fetch_outputs_inline_images": true,
+  "inline_image_count": 1,
+  "hermes_core_materialized_image": "/home/james/.hermes/cache/images/img_090796415243.png",
+  "committed_linux_image": "/home/james/.hermes/state/yinyue-avatar/output/yinyue-20260819-014550-r0265.png",
+  "committed_image_bytes": 5946881,
+  "committed_image_dimensions": "1888x2512",
+  "state_revision_before": 264,
+  "state_revision_after": 265,
+  "commit_status": "committed",
+  "duplicate_commit_idempotent": true,
+  "delivery_status": "skipped",
+  "telegram_attempted": false,
+  "resubmitted_during_recovery": false
+}

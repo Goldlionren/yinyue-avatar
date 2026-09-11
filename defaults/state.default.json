@@ -1,0 +1,116 @@
+{
+  "schema_version": 2,
+  "visual_system_version": 1,
+  "character": {
+    "name": "银月",
+    "identity": "固定成年女性数字人",
+    "identity_locked": true
+  },
+  "relationship": {
+    "role": "",
+    "stage": "0",
+    "trust": 10,
+    "intimacy": 10,
+    "attachment": 10,
+    "current_dynamic": "",
+    "shared_commitments": [],
+    "important_boundaries": [],
+    "preferred_names": {},
+    "last_major_change": null,
+    "legacy_relationship_stage": 0,
+    "legacy_affection": 10
+  },
+  "scene": {
+    "scene_id": "default-scene",
+    "location": "现代公寓卧室",
+    "environment": "现代公寓卧室",
+    "activity": "在卧室休息",
+    "time_of_day": "清晨",
+    "props": []
+  },
+  "appearance": {
+    "outfit": {
+      "base": ["浅蓝色丝质吊带裙"],
+      "legwear": "黑色半透明丝袜",
+      "footwear": "黑色尖头高跟鞋",
+      "outerwear": []
+    },
+    "hair": "白色长发，狐狸耳朵",
+    "makeup": "精致自然妆容",
+    "accessories": []
+  },
+  "physical": {
+    "cleanliness": "clean",
+    "wetness": "dry",
+    "sweat": "none",
+    "dirt": "none",
+    "fatigue": "none",
+    "injury": []
+  },
+  "emotion": {
+    "baseline": "平静",
+    "current": "平静",
+    "intensity": 0,
+    "reason": "",
+    "persist_across_scenes": false
+  },
+  "presentation": {
+    "pose": "站在卧室落地窗前",
+    "action": "看向镜头",
+    "expression": "温柔微笑",
+    "gaze": "看向镜头",
+    "held_objects": [],
+    "lighting": "清晨自然光",
+    "camera": "全身正面视角"
+  },
+  "visual": {
+    "outfit": "浅蓝色丝质吊带裙",
+    "outerwear": "",
+    "top": "",
+    "bottom": "",
+    "dress": "浅蓝色丝质吊带裙",
+    "legwear": "黑色半透明丝袜",
+    "footwear": "黑色尖头高跟鞋",
+    "headwear": "",
+    "accessories": "",
+    "hair": "白色长发，狐狸耳朵",
+    "makeup": "精致自然妆容",
+    "expression": "温柔微笑",
+    "pose": "站在卧室落地窗前",
+    "action": "看向镜头",
+    "scene": "现代公寓卧室",
+    "lighting": "清晨自然光",
+    "camera": "全身正面视角"
+  },
+  "internal": {
+    "mood": "平静",
+    "current_activity": "在卧室休息",
+    "relationship_stage": 0,
+    "affection": 10,
+    "trust": 10
+  },
+  "continuity": {
+    "revision": 0,
+    "updated_at": "",
+    "last_image": "",
+    "last_prompt_sha256": "",
+    "last_prompt_id": "",
+    "last_workflow_id": "",
+    "last_target": "",
+    "last_transaction_id": "",
+    "remote_images": {},
+    "delivery_status": "",
+    "mode": "continue",
+    "scene_id": "default-scene",
+    "source_revision": 0,
+    "source_job": "",
+    "inherit_fields": []
+  },
+  "memory": {
+    "long_term_summary": "",
+    "shared_experiences": [],
+    "stable_user_preferences": [],
+    "unfinished_items": [],
+    "recent_events": []
+  }
+}

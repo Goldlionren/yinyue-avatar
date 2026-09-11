@@ -1,0 +1,12 @@
+name: yinyue-visual
+version: "1.3.0"
+description: "Yinyue deterministic avatar generation with non-sticky visual turn boundaries."
+provides_hooks:
+  - pre_gateway_dispatch
+  - pre_llm_call
+  - pre_tool_call
+  - post_tool_call
+  - transform_llm_output
+  - post_llm_call
+provides_tools:
+  - yinyue_avatar_generate
