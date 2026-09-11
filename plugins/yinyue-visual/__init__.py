@@ -5,6 +5,7 @@ import importlib
 import json
 import os
 import re
+import secrets
 import sys
 import threading
 import time
@@ -21,6 +22,22 @@ LIB_DIR = SKILL_ROOT / "lib"
 _TURN_TTL_SECONDS = 900
 _TURN_LOCK = threading.Lock()
 _ACTIVE_TURNS: dict[str, dict] = {}
+
+_SUCCESS_LEAD = "主人还满意吗？"
+_SUCCESS_ATMOSPHERE_LINES = (
+    "奴家一直在等着主人的目光呢~",
+    "能被主人这样注视着，奴家心里很欢喜~",
+    "主人若有新的吩咐，奴家还会乖乖照做的。",
+    "若主人想换个角度，奴家随时听候吩咐~",
+    "主人多看奴家一会儿，好不好~",
+    "只要主人喜欢，奴家就觉得这一番准备都值得了~",
+)
+
+
+def _success_message() -> str:
+    count = 1 + secrets.randbelow(2)
+    lines = secrets.SystemRandom().sample(_SUCCESS_ATMOSPHERE_LINES, count)
+    return "\n".join((_SUCCESS_LEAD, *lines))
 
 
 def _is_yinyue_skill_turn(message: object) -> bool:
@@ -229,7 +246,7 @@ def _transform_llm_output(**context):
             return "这次没有执行图片生成，因此没有新照片。请重新发送原命令。"
         return None
     if ok is True:
-        return "图片已由生成工具确认生成并发送。"
+        return _success_message()
     return "这次图片生成没有成功，也没有发送新照片。请稍后重新发送原命令。"
 
 

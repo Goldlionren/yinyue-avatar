@@ -1,6 +1,6 @@
 # yinyue-avatar 构建、用户使用与 ComfyUI Workflow 升级指南
 
-适用版本：`yinyue-avatar 0.3.9`  
+适用版本：`yinyue-avatar 0.3.10`  
 当前验证日期：2026-09-11  
 当前生产目标：`comfy_3060`
 
@@ -25,7 +25,7 @@
 ```text
 Telegram 用户
   ↓
-yinyue-model-router 0.3.5
+yinyue-model-router 0.3.6
   ├─ 处理 /yinyue-avatar 控制命令与穿着命令
   └─ 为当前 Session 绑定 Qwen 与 persona
   ↓
@@ -46,9 +46,9 @@ comfy_3060 MCP → ComfyUI Workflow → 图片
 
 | 项目 | 当前值 |
 |---|---|
-| Skill 版本 | `0.3.9` |
-| 视觉插件 | `yinyue-visual 1.3.0` |
-| Session 路由插件 | `yinyue-model-router 0.3.5` |
+| Skill 版本 | `0.3.10` |
+| 视觉插件 | `yinyue-visual 1.3.1` |
+| Session 路由插件 | `yinyue-model-router 0.3.6` |
 | 执行模式 | `mcp` |
 | 默认目标 | `comfy_3060` |
 | 生产 Workflow ID | `yinyue_cosplay01` |

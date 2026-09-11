@@ -19,7 +19,7 @@ description: 银月独立数字人视觉系统。用户询问银月当前外观�
 yinyue_avatar_generate({
   "intent": "用户要求的原文",
   "visual": {"pose": "跪在地上"},
-  "say": "已按你的要求重新生成，给你看看。"
+  "say": "奴家已经按照主人的吩咐摆好姿势了，请主人观赏~"
 })
 ```
 
@@ -34,7 +34,7 @@ hair makeup expression pose action scene lighting camera
 
 每个值都是普通字符串，清空字段用空字符串。只改变某一层衣物时保留未点名字段；替换整套衣物时清空不再适用的旧服装字段。状态没有专门的 underwear 字段，此类细节只保留在 `intent`，不得虚构字段。用户只说“换个衣服/动作”等开放要求时，选择一个符合上下文的具体值写入 `visual`。
 
-可选参数为 `aspect_ratio`、`megapixels`、`width`、`height`、`workflow`、`target`、`channel` 和 `no_send`。未明确指定分辨率时不传。`say` 只描述“已按要求重新生成”等已确认事实；未目视验证前不得具体声称成片包含某件衣服、姿势或场景。
+可选参数为 `aspect_ratio`、`megapixels`、`width`、`height`、`workflow`、`target`、`channel` 和 `no_send`。未明确指定分辨率时不传。`say` 固定使用“奴家已经按照主人的吩咐摆好姿势了，请主人观赏~”；执行器会强制采用这句，未目视验证前不得具体声称成片包含某件衣服、姿势或场景。
 
 工具返回成功后立即以空响应结束，不再发送总结、语音、重复文字或重复图片。工具返回失败后不得重试、不得换工具、不得检查 help、不得重新 prepare 或自由排障；只发一条简短、可操作的错误摘要。
 

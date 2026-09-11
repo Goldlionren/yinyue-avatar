@@ -108,6 +108,7 @@ class MCPExecutorTests(unittest.TestCase):
             transaction = result["transaction"]
             self.assertEqual(transaction["status"], "committed")
             self.assertEqual(transaction["submit_count"], 1)
+            self.assertEqual(transaction["say"], executor.GENERATION_SAY)
             self.assertEqual(
                 transaction["prompt_id"],
                 "c7d8842d-ac21-4752-8e83-ce8b4c66cb1b",
@@ -348,7 +349,13 @@ class MCPExecutorTests(unittest.TestCase):
         confirmed = hooks["transform_llm_output"](
             session_id="session-4", platform="telegram", response_text="",
         )
-        self.assertIn("确认生成并发送", confirmed)
+        lines = confirmed.splitlines()
+        self.assertEqual(lines[0], "主人还满意吗？")
+        self.assertIn(len(lines), {2, 3})
+        self.assertEqual(len(lines[1:]), len(set(lines[1:])))
+        self.assertTrue(
+            all(line in module._SUCCESS_ATMOSPHERE_LINES for line in lines[1:])
+        )
 
 
 if __name__ == "__main__":

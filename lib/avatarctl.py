@@ -50,6 +50,7 @@ import visual_v030 as visual_system  # noqa: E402
 CONFIG_PATH = SKILL_ROOT / "config.json"
 LOCAL_CONFIG_PATH = SKILL_ROOT / "config.local.json"
 WORKER_ACTION = "_worker"
+GENERATION_SAY = "奴家已经按照主人的吩咐摆好姿势了，请主人观赏~"
 
 
 class AvatarError(RuntimeError):
@@ -3055,7 +3056,7 @@ def main() -> int:
                 megapixels=args.megapixels,
                 width=args.width,
                 height=args.height,
-                say=args.say or "我已经按你说的准备好了，给你看看。",
+                say=GENERATION_SAY,
                 channel=args.channel,
                 no_send=bool(args.no_send),
             )
@@ -3086,11 +3087,6 @@ def main() -> int:
         elif args.command == "update":
             result = cmd_update(config, parse_set_values(args.set, config), args.remember)
         elif args.command in {"show", "render"}:
-            default_say = (
-                "我现在就拍给你看。"
-                if args.command == "show"
-                else "我已经按你说的调整好了，给你看看。"
-            )
             patch = parse_set_values(getattr(args, "set", []), config)
             if config.get("execution", {}).get("mode") == "mcp":
                 result = cmd_prepare(
@@ -3105,7 +3101,7 @@ def main() -> int:
                     megapixels=None,
                     width=None,
                     height=None,
-                    say=args.say or default_say,
+                    say=GENERATION_SAY,
                     channel=args.channel,
                     no_send=bool(args.no_send),
                 )
@@ -3113,7 +3109,7 @@ def main() -> int:
                 request = {
                     "action": args.command,
                     "patch": patch,
-                    "say": args.say or default_say,
+                    "say": GENERATION_SAY,
                     "remember": args.remember,
                     "channel": args.channel or config["telegram"]["default_channel"],
                     "no_send": bool(args.no_send),
@@ -3153,7 +3149,7 @@ def main() -> int:
                         megapixels=None,
                         width=None,
                         height=None,
-                        say=args.say or "我已经按你说的调整好了，给你看看。",
+                        say=GENERATION_SAY,
                         channel=args.channel,
                         no_send=bool(args.no_send),
                         transition=spec,
@@ -3163,7 +3159,7 @@ def main() -> int:
                         "action": "render-transition",
                         "patch": {},
                         "transition": spec,
-                        "say": args.say or "我已经按你说的调整好了，给你看看。",
+                        "say": GENERATION_SAY,
                         "remember": "",
                         "channel": args.channel or config["telegram"]["default_channel"],
                         "no_send": bool(args.no_send),

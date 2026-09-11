@@ -1,4 +1,4 @@
-# yinyue-avatar 0.3.9
+# yinyue-avatar 0.3.10
 
 银月的独立、多 Workflow、多 GPU 数字人视觉 Skill。它保留 0.2.4 的角色、场景、关系和长期记忆状态，在其上增加自然语言路由、Comfy MCP execution plan、双 target registry、可恢复 transaction 和局部图片编辑连续性。
 

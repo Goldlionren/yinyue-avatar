@@ -14,6 +14,9 @@ class MCPExecutionError(core.AvatarError):
     pass
 
 
+GENERATION_SAY = core.GENERATION_SAY
+
+
 ToolCaller = Callable[[str, dict[str, Any]], str | dict[str, Any]]
 _UUID_RE = re.compile(
     r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
@@ -329,7 +332,7 @@ def generate(args: dict[str, Any], call_tool: ToolCaller) -> dict[str, Any]:
             megapixels=args.get("megapixels"),
             width=args.get("width"),
             height=args.get("height"),
-            say=str(args.get("say") or "已按你的要求重新生成，给你看看。"),
+            say=GENERATION_SAY,
             channel=str(args.get("channel") or ""),
             no_send=bool(args.get("no_send", False)),
         )
@@ -366,7 +369,7 @@ def generate(args: dict[str, Any], call_tool: ToolCaller) -> dict[str, Any]:
                     megapixels=args.get("megapixels"),
                     width=args.get("width"),
                     height=args.get("height"),
-                    say=str(args.get("say") or "已按你的要求重新生成，给你看看。"),
+                    say=GENERATION_SAY,
                     channel=str(args.get("channel") or ""),
                     no_send=bool(args.get("no_send", False)),
                 )
