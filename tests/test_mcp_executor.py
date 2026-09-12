@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import importlib
 import json
@@ -124,6 +125,24 @@ class MCPExecutorTests(unittest.TestCase):
                         {"intent": "拍照", "visual": {"underwear": ""}}, fake
                     )
             self.assertEqual(fake.calls, [])
+
+    def test_on_demand_host_failure_stops_before_variant_or_submit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self.ready_config(tmp)
+            config["execution"]["default_target"] = "comfy_4080s"
+            calls = []
+
+            def offline(name: str, args: dict) -> str:
+                calls.append((name, copy.deepcopy(args)))
+                return json.dumps({"error": "host offline"})
+
+            with mock.patch.object(executor.core, "load_config", return_value=config):
+                with self.assertRaises(executor.MCPExecutionError):
+                    executor.generate({"intent": "拍张现在的照片"}, offline)
+            self.assertEqual(
+                [name.rsplit("__", 1)[-1] for name, _args in calls],
+                ["server_info"],
+            )
 
     def test_new_request_resumes_bound_job_without_resubmit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -261,6 +280,74 @@ class MCPExecutorTests(unittest.TestCase):
                 raw_message=SimpleNamespace(text="普通聊天"),
             )
         ))
+
+        self.assertEqual(
+            module._parse_mcp_command("/yinyue-avatar mcp"),
+            ("show", ""),
+        )
+        self.assertEqual(
+            module._parse_mcp_command("/yinyue_avatar@my_bot mcp 4080S"),
+            ("set", "4080S"),
+        )
+        self.assertIsNone(module._parse_mcp_command("帮我切换到 5090"))
+        formatted = module._format_mcp_target(
+            {
+                "default_target": "comfy_3060",
+                "updated": False,
+                "options": [
+                    {
+                        "label": "3060",
+                        "selected": True,
+                        "readiness": "verified",
+                    }
+                ],
+            }
+        )
+        self.assertIn("当前选择：3060", formatted)
+        self.assertIn("/yinyue-avatar mcp 5090", formatted)
+        self.assertIn("失败不会转发到其他节点", formatted)
+
+        async def exercise_mcp_command() -> tuple[dict, list[tuple[str, str, str]]]:
+            called: list[tuple[str, str, str]] = []
+
+            class Gateway:
+                def _is_user_authorized(self, source):
+                    return True
+
+                def _normalize_source_for_session_key(self, source):
+                    return source
+
+                def _session_key_for_source(self, source):
+                    return "telegram:test"
+
+            async def fake_handle(gateway, source, session_key, operation, target):
+                called.append((session_key, operation, target))
+
+            with mock.patch.object(
+                module,
+                "_handle_mcp_command",
+                new=fake_handle,
+            ):
+                result = hooks["pre_gateway_dispatch"](
+                    event=SimpleNamespace(
+                        text="/yinyue-avatar mcp 4080s",
+                        source=SimpleNamespace(
+                            platform=SimpleNamespace(value="telegram"),
+                            chat_id="42",
+                        ),
+                        raw_message=SimpleNamespace(text="/yinyue-avatar mcp 4080s"),
+                    ),
+                    gateway=Gateway(),
+                )
+                await asyncio.sleep(0)
+            return result, called
+
+        command_result, called = asyncio.run(exercise_mcp_command())
+        self.assertEqual(
+            command_result,
+            {"action": "skip", "reason": "yinyue-mcp-target-command"},
+        )
+        self.assertEqual(called, [("telegram:test", "set", "4080s")])
 
         marker = (
             '[IMPORTANT: The user has invoked the "yinyue-avatar" skill, '

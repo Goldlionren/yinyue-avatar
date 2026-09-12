@@ -1,10 +1,10 @@
-# yinyue-avatar 0.3.10
+# yinyue-avatar 0.3.11
 
-银月的独立、多 Workflow、多 GPU 数字人视觉 Skill。它保留 0.2.4 的角色、场景、关系和长期记忆状态，在其上增加自然语言路由、Comfy MCP execution plan、双 target registry、可恢复 transaction 和局部图片编辑连续性。
+银月的独立、多 Workflow、多 GPU 数字人视觉 Skill。它保留 0.2.4 的角色、场景、关系和长期记忆状态，在其上增加自然语言路由、Comfy MCP execution plan、三 target registry、可恢复 transaction 和局部图片编辑连续性。
 
 ## 运行边界
 
-运行时只依赖 Hermes、Hermes MCP runtime、`comfy_5090`、`comfy_3060`、GPU 主机的 ComfyUI/Workflow、Telegram、Python 标准库。本目录不读取或调用任何其他 Skill。
+运行时只依赖 Hermes、Hermes MCP runtime、`comfy_3060`、`comfy_4080s`、`comfy_5090`、GPU 主机的 ComfyUI/Workflow、Telegram、Python 标准库。本目录不读取或调用任何其他 Skill。
 
 默认 backend：
 
@@ -23,6 +23,8 @@ AVATARCTL="$HOME/.hermes/skills/roleplay/yinyue-avatar/bin/avatarctl"
 "$AVATARCTL" workflows
 "$AVATARCTL" workflow-info yinyue_cosplay01
 "$AVATARCTL" mcp-status
+"$AVATARCTL" mcp-target
+"$AVATARCTL" mcp-target 4080s
 "$AVATARCTL" prepare --intent '3:4，2MP，拍张现在的照片' --no-send
 "$AVATARCTL" transaction-status TRANSACTION_ID
 "$AVATARCTL" resend-last
@@ -39,7 +41,11 @@ AVATARCTL="$HOME/.hermes/skills/roleplay/yinyue-avatar/bin/avatarctl"
 
 Registry 位于 `registry/workflows.json`。核心代码不固定 node ID；语义角色到 frontend workflow slot 的地址全部在 registry 中。
 
-3060 上的当前生产 frontend Workflow 是 `D:\AI\YinyueAvatar\workflows\Krea2_YINYUE_cosplay01.json`。MCP production control plane 修改 Prompt `63.value`、分辨率 `49.aspect_ratio` / `49.megapixels`，并把同一个 8 位事务 seed 同时写入 `92.noise_seed` 与 `93.noise_seed`；默认分辨率为 `9:16`、`1.5MP`。本地 frontend 源文件保留在 `workflow/Krea2_YINYUE_cosplay01.json`，legacy direct-http 使用独立的 API-format 文件 `workflow/Krea2_YINYUE_cosplay01.api.json`。`yinyue_edit01` 仍需在可用 target 上部署和验证后才会启用；5090 保持 fail-closed，直到真实连通及 slot 验证通过。
+3060 上的当前生产 frontend Workflow 是 `D:\AI\YinyueAvatar\workflows\Krea2_YINYUE_cosplay01.json`。5090 和 4080s 使用 `F:\AI\YinyueAvatar\workflows\yinyue_cosplay01.json`；两台按需节点均已完成真实 MCP slot、validate 和隔离 vary 验证，开机后每次事务仍执行提交前预检。MCP production control plane 修改 Prompt `63.value`、分辨率 `49.aspect_ratio` / `49.megapixels`，并把同一个 8 位事务 seed 同时写入 `92.noise_seed` 与 `93.noise_seed`；默认分辨率为 `9:16`、`1.5MP`。本地 frontend 源文件保留在 `workflow/Krea2_YINYUE_cosplay01.json`，legacy direct-http 使用独立的 API-format 文件 `workflow/Krea2_YINYUE_cosplay01.api.json`。`yinyue_edit01` 仍需在各 target 上单独部署和验证后才会启用。
+
+## MCP 节点切换
+
+Telegram 使用 `/yinyue-avatar mcp` 查看节点，使用 `/yinyue-avatar mcp 3060|4080s|5090` 切换。选择会原子写入 `config.local.json`，写入前把旧文件备份到 state 目录的 `config-backups/`；发送 `mcp 3060` 即可恢复默认节点。目标选择是严格的：不可用时明确失败，不自动把图片转发到另一张 GPU。切换只影响之后创建的事务，不改变已绑定的 `prompt_id`。
 
 ## 事务安全
 

@@ -9,10 +9,18 @@
       "remote_variant_root": "F:\\AI\\YinyueAvatar\\temp",
       "remote_output_root": "F:\\AI\\YinyueAvatar\\output"
     },
+    "comfy_4080s": {
+      "mcp_server": "comfy_4080s",
+      "enabled": true,
+      "preferred_rank": 20,
+      "remote_root": "F:\\AI\\YinyueAvatar",
+      "remote_variant_root": "F:\\AI\\YinyueAvatar\\temp",
+      "remote_output_root": "F:\\AI\\YinyueAvatar\\output"
+    },
     "comfy_3060": {
       "mcp_server": "comfy_3060",
       "enabled": true,
-      "preferred_rank": 20,
+      "preferred_rank": 30,
       "remote_root": "D:\\AI\\YinyueAvatar",
       "remote_variant_root": "D:\\AI\\YinyueAvatar\\temp",
       "remote_output_root": "D:\\AI\\YinyueAvatar\\output"
@@ -25,11 +33,13 @@
       "description": "生成银月完整形象、全套换装或新场景照片。人物一致性由 GPU Workflow 内部负责。",
       "allowed_targets": [
         "comfy_5090",
+        "comfy_4080s",
         "comfy_3060"
       ],
       "preferred_target": "comfy_5090",
       "remote_paths": {
         "comfy_5090": "F:\\AI\\YinyueAvatar\\workflows\\yinyue_cosplay01.json",
+        "comfy_4080s": "F:\\AI\\YinyueAvatar\\workflows\\yinyue_cosplay01.json",
         "comfy_3060": "D:\\AI\\YinyueAvatar\\workflows\\Krea2_YINYUE_cosplay01.json"
       },
       "capabilities": [
@@ -80,10 +90,18 @@
       },
       "target_status": {
         "comfy_5090": {
-          "workflow_exists": false,
-          "interface_verified": false,
-          "checked_at": "2026-08-18T13:55:51Z",
-          "reason": "host unreachable during audit; workflow and slots not verified"
+          "workflow_exists": true,
+          "interface_verified": true,
+          "runtime_preflight_allowed": true,
+          "checked_at": "2026-09-12T07:26:00Z",
+          "reason": "deployed without overwrite; SHA-256 matched local frontend source; real MCP server_info, list_workflow_slots, validate_workflow, and isolated vary_workflow passed for all five business slots"
+        },
+        "comfy_4080s": {
+          "workflow_exists": true,
+          "interface_verified": true,
+          "runtime_preflight_allowed": true,
+          "checked_at": "2026-09-12T07:29:00Z",
+          "reason": "deployed without overwrite; SHA-256 matched local frontend source; loopback MCP target fixed and real server_info, list_workflow_slots, validate_workflow, and isolated vary_workflow passed for all five business slots"
         },
         "comfy_3060": {
           "workflow_exists": true,
@@ -109,11 +127,13 @@
       "description": "基于上一张真实银月图片进行局部服装、发型、动作、表情或物体编辑。",
       "allowed_targets": [
         "comfy_5090",
+        "comfy_4080s",
         "comfy_3060"
       ],
       "preferred_target": "comfy_5090",
       "remote_paths": {
         "comfy_5090": "F:\\AI\\YinyueAvatar\\workflows\\yinyue_edit01.json",
+        "comfy_4080s": "F:\\AI\\YinyueAvatar\\workflows\\yinyue_edit01.json",
         "comfy_3060": "D:\\AI\\YinyueAvatar\\workflows\\yinyue_edit01.json"
       },
       "capabilities": [
@@ -173,6 +193,12 @@
           "interface_verified": false,
           "checked_at": "2026-08-18T13:55:51Z",
           "reason": "host unreachable during audit; workflow and slots not verified"
+        },
+        "comfy_4080s": {
+          "workflow_exists": false,
+          "interface_verified": false,
+          "checked_at": "2026-09-12T00:00:00Z",
+          "reason": "yinyue_edit01.json is not verified on the on-demand GPU host"
         },
         "comfy_3060": {
           "workflow_exists": false,

@@ -1,8 +1,10 @@
 """Hermes tool adapter for deterministic Yinyue image generation."""
 from __future__ import annotations
 
+import asyncio
 import importlib
 import json
+import logging
 import os
 import re
 import secrets
@@ -22,6 +24,12 @@ LIB_DIR = SKILL_ROOT / "lib"
 _TURN_TTL_SECONDS = 900
 _TURN_LOCK = threading.Lock()
 _ACTIVE_TURNS: dict[str, dict] = {}
+logger = logging.getLogger(__name__)
+_MCP_COMMAND_RE = re.compile(
+    r"^/(?:yinyue-avatar|yinyue_avatar)(?:@[A-Za-z0-9_]+)?\s+"
+    r"mcp(?:\s+(\S+))?\s*$",
+    re.IGNORECASE,
+)
 
 _SUCCESS_LEAD = "主人还满意吗？"
 _SUCCESS_ATMOSPHERE_LINES = (
@@ -54,6 +62,92 @@ def _is_yinyue_command(text: object) -> bool:
     return first in {"/yinyue-avatar", "/yinyue_avatar"}
 
 
+def _parse_mcp_command(*texts: object) -> tuple[str, str] | None:
+    for value in texts:
+        match = _MCP_COMMAND_RE.fullmatch(str(value or "").strip())
+        if match:
+            target = str(match.group(1) or "").strip()
+            return ("set", target) if target else ("show", "")
+    return None
+
+
+def _avatarctl():
+    if str(LIB_DIR) not in sys.path:
+        sys.path.insert(0, str(LIB_DIR))
+    return importlib.import_module("avatarctl")
+
+
+def _format_mcp_target(result: dict) -> str:
+    current = str(result.get("default_target", "")).removeprefix("comfy_")
+    lines = [f"银月图片 MCP 当前选择：{current}", "", "可选节点："]
+    readiness_labels = {
+        "verified": "已验证",
+        "runtime_preflight": "按需预检",
+        "unavailable": "不可用",
+    }
+    for option in result.get("options", []):
+        marker = "→" if option.get("selected") else " "
+        readiness = readiness_labels.get(option.get("readiness"), "未知")
+        lines.append(f"{marker} {option.get('label')}（{readiness}）")
+    lines.extend(
+        [
+            "",
+            "切换命令：",
+            "/yinyue-avatar mcp 3060",
+            "/yinyue-avatar mcp 4080s",
+            "/yinyue-avatar mcp 5090",
+            "",
+            "选择只影响之后新建的图片事务；不会改变或重提已提交任务。",
+            "5090/4080s 会在提交前按需检查主机、Workflow 和 slots；失败不会转发到其他节点。",
+        ]
+    )
+    if result.get("updated"):
+        lines.insert(1, "切换已保存；发送 mcp 3060 可随时回退。")
+    return "\n".join(lines)
+
+
+def _mcp_target_operation(operation: str, target: str) -> str:
+    core = _avatarctl()
+    config = core.load_config()
+    result = core.cmd_mcp_target(config, target if operation == "set" else "")
+    return _format_mcp_target(result)
+
+
+async def _send_gateway_reply(gateway: object, source: object, message: str) -> None:
+    try:
+        adapter = gateway._adapter_for_source(source)
+        if adapter is None:
+            logger.warning("MCP target reply has no adapter")
+            return
+        metadata_fn = getattr(gateway, "_thread_metadata_for_source", None)
+        metadata = metadata_fn(source) if callable(metadata_fn) else None
+        try:
+            await adapter.send(str(source.chat_id), message, metadata=metadata)
+        except TypeError:
+            await adapter.send(str(source.chat_id), message)
+    except Exception:
+        logger.warning("MCP target reply failed", exc_info=True)
+
+
+async def _handle_mcp_command(
+    gateway: object,
+    source: object,
+    session_key: str,
+    operation: str,
+    target: str,
+) -> None:
+    try:
+        running = getattr(gateway, "_is_session_running", None)
+        if operation == "set" and callable(running) and running(session_key):
+            message = "当前 Session 仍有任务在运行；请等待完成后再切换图片 MCP。"
+        else:
+            message = await asyncio.to_thread(_mcp_target_operation, operation, target)
+    except Exception as exc:
+        logger.warning("MCP target command failed: %s", exc, exc_info=True)
+        message = f"MCP 切换失败：{exc}"
+    await _send_gateway_reply(gateway, source, message)
+
+
 
 _EXPLICIT_VISUAL_PATTERNS = (
     r"(?:拍照|拍照片|拍相片|自拍)",
@@ -83,6 +177,30 @@ def _on_pre_gateway_dispatch(**context):
     current = getattr(event, "text", "")
     raw_message = getattr(event, "raw_message", None)
     raw = getattr(raw_message, "text", "") or getattr(raw_message, "caption", "")
+    command = _parse_mcp_command(current, raw)
+    if command is not None:
+        gateway = context.get("gateway")
+        authorized = getattr(gateway, "_is_user_authorized", None)
+        if gateway is None or not callable(authorized):
+            return None
+        try:
+            if authorized(source) is not True:
+                return None
+        except Exception:
+            logger.warning("MCP target authorization check failed", exc_info=True)
+            return None
+        normalize = getattr(gateway, "_normalize_source_for_session_key", None)
+        normalized_source = normalize(source) if callable(normalize) else source
+        try:
+            session_key = str(gateway._session_key_for_source(normalized_source))
+            asyncio.get_running_loop().create_task(
+                _handle_mcp_command(
+                    gateway, normalized_source, session_key, command[0], command[1]
+                )
+            )
+        except Exception:
+            logger.warning("Could not schedule MCP target command", exc_info=True)
+        return {"action": "skip", "reason": "yinyue-mcp-target-command"}
     if _is_yinyue_command(raw) and not _is_yinyue_command(current):
         return {"action": "rewrite", "text": str(raw)}
     return None

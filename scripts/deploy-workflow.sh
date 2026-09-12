@@ -8,8 +8,8 @@ remote_name=""
 
 usage() {
   printf '%s\n' \
-    'Usage: scripts/deploy-workflow.sh --target comfy_5090|comfy_3060 --source ABSOLUTE_JSON [--name FILE.json] [--apply]' \
-    'Default is dry-run. --apply refuses to overwrite an existing remote file.'
+    'Usage: scripts/deploy-workflow.sh --target comfy_3060|comfy_4080s|comfy_5090 --source ABSOLUTE_JSON [--name FILE.json] [--apply]' \
+    'Default is dry-run. --apply creates missing YinyueAvatar directories and refuses to overwrite an existing remote file.'
 }
 
 while (($#)); do
@@ -38,17 +38,25 @@ case "$target" in
   comfy_5090)
     key=/home/james/.ssh/comfy_5090
     remote=Admin@192.168.1.200
-    windows_path="F:\\AI\\YinyueAvatar\\workflows\\$remote_name"
-    scp_path="/F:/AI/YinyueAvatar/workflows/$remote_name"
+    remote_root='F:\AI\YinyueAvatar'
+    scp_root='/F:/AI/YinyueAvatar'
+    ;;
+  comfy_4080s)
+    key=/home/james/.ssh/comfy_4080s
+    remote=Admin@192.168.1.241
+    remote_root='F:\AI\YinyueAvatar'
+    scp_root='/F:/AI/YinyueAvatar'
     ;;
   comfy_3060)
     key=/home/james/.ssh/comfy_3060
     remote=ryjdl@192.168.100.211
-    windows_path="D:\\AI\\YinyueAvatar\\workflows\\$remote_name"
-    scp_path="/D:/AI/YinyueAvatar/workflows/$remote_name"
+    remote_root='D:\AI\YinyueAvatar'
+    scp_root='/D:/AI/YinyueAvatar'
     ;;
   *) printf 'ERROR: unsupported target: %s\n' "$target" >&2; exit 3 ;;
 esac
+windows_path="$remote_root\\workflows\\$remote_name"
+scp_path="$scp_root/workflows/$remote_name"
 
 printf 'Target: %s\nSource: %s\nRemote: %s\n' "$target" "$source_file" "$windows_path"
 if ((apply == 0)); then
@@ -61,6 +69,11 @@ if ssh -T -i "$key" -o BatchMode=yes -o LogLevel=ERROR "$remote" \
   printf 'ERROR: remote workflow already exists; refusing overwrite: %s\n' "$windows_path" >&2
   exit 4
 fi
+for directory in "$remote_root" "$remote_root\\workflows" \
+  "$remote_root\\temp" "$remote_root\\output"; do
+  ssh -T -i "$key" -o BatchMode=yes -o LogLevel=ERROR "$remote" \
+    cmd.exe /d /q /c if not exist "$directory\\NUL" mkdir "$directory"
+done
 scp -p -i "$key" -o BatchMode=yes -o LogLevel=ERROR \
   "$source_file" "$remote:$scp_path"
 printf 'Deployed without overwrite: %s\n' "$windows_path"

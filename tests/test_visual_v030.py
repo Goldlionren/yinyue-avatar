@@ -113,8 +113,71 @@ class VisualV030Tests(unittest.TestCase):
     def test_registry_parses_and_unknown_workflow_fails(self) -> None:
         registry = visual.load_registry(ROOT / "registry/workflows.json")
         self.assertEqual(set(registry["workflows"]), {"yinyue_cosplay01", "yinyue_edit01"})
+        self.assertEqual(
+            set(registry["targets"]),
+            {"comfy_3060", "comfy_4080s", "comfy_5090"},
+        )
+        self.assertEqual(
+            registry["targets"]["comfy_4080s"]["remote_root"],
+            r"F:\AI\YinyueAvatar",
+        )
         with self.assertRaises(avatarctl.AvatarError):
             avatarctl.cmd_workflow_info(self.base_config, "missing")
+
+    def test_persisted_default_target_is_strict_and_wins_over_workflow_preference(self) -> None:
+        registry = visual.load_registry(ROOT / "registry/workflows.json")
+        workflow = registry["workflows"]["yinyue_cosplay01"]
+        self.assertEqual(workflow["preferred_target"], "comfy_5090")
+        self.assertEqual(
+            visual.select_target(
+                registry,
+                workflow,
+                requested_target="",
+                default_target="comfy_3060",
+            ),
+            "comfy_3060",
+        )
+
+    def test_on_demand_target_enters_runtime_preflight_without_static_verification(self) -> None:
+        registry = visual.load_registry(ROOT / "registry/workflows.json")
+        workflow = registry["workflows"]["yinyue_cosplay01"]
+        workflow["target_status"]["comfy_4080s"].update(
+            workflow_exists=False,
+            interface_verified=False,
+            runtime_preflight_allowed=True,
+            reason="test fixture requires runtime preflight",
+        )
+        self.assertFalse(workflow["target_status"]["comfy_4080s"]["interface_verified"])
+        self.assertEqual(
+            visual.select_target(
+                registry,
+                workflow,
+                requested_target="",
+                default_target="comfy_4080s",
+            ),
+            "comfy_4080s",
+        )
+
+    def test_strict_default_never_falls_back_to_another_ready_host(self) -> None:
+        registry = visual.load_registry(ROOT / "registry/workflows.json")
+        workflow = registry["workflows"]["yinyue_cosplay01"]
+        workflow["target_status"]["comfy_3060"].update(
+            workflow_exists=False,
+            interface_verified=False,
+            runtime_preflight_allowed=False,
+            reason="test fixture unavailable",
+        )
+        workflow["target_status"]["comfy_5090"].update(
+            workflow_exists=True,
+            interface_verified=True,
+        )
+        with self.assertRaises(visual.VisualSystemError):
+            visual.select_target(
+                registry,
+                workflow,
+                requested_target="",
+                default_target="comfy_3060",
+            )
 
     def test_production_registry_uses_both_sampler_seed_bindings(self) -> None:
         registry = visual.load_registry(ROOT / "registry/workflows.json")

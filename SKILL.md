@@ -60,6 +60,8 @@ hair makeup expression pose action scene lighting camera
 
 同一用户请求只允许一次 `yinyue_avatar_generate`；失败也不得重复生成。Telegram 投递失败不等于生成失败，用户要求时只用 `resend-last`。
 
+图片 MCP 使用确定性管理命令，不经过模型：`/yinyue-avatar mcp` 查看当前节点与三个选项；`/yinyue-avatar mcp 3060`、`/yinyue-avatar mcp 4080s`、`/yinyue-avatar mcp 5090` 切换后续新事务使用的严格目标。默认是 3060。切换不改变已存在事务；不得在节点失败时自动改用另一节点。5090/4080s 的 text-to-image Workflow 已验证，但作为按需开机节点仍须在每次事务提交前检查主机、Workflow variant 和业务 slots，全部通过后才能提交。
+
 穿着状态使用确定性管理命令，不经过模型：`/yinyue-avatar 穿着` 查看结构化状态；`/yinyue-avatar 穿着 设置 {"outfit":"黑色西装","legwear":"黑色丝袜","accessories":""}` 修改并持久化。修改只更新状态，不自动生图；空字符串用于清除字段。支持的键为 `outfit`、`outerwear`、`top`、`bottom`、`dress`、`legwear`、`footwear`、`headwear`、`accessories`。
 
 管理员需要构建、部署、排障或更换 ComfyUI Workflow 时，读取 [构建、用户使用与 Workflow 升级指南](references/build-user-workflow-guide.md)。

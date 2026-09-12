@@ -1,7 +1,7 @@
 {
   "skill": {
     "name": "yinyue-avatar",
-    "version": "0.3.10"
+    "version": "0.3.11"
   },
   "runtime": {
     "state_dir": "~/.hermes/state/yinyue-avatar",
@@ -12,7 +12,7 @@
   "execution": {
     "mode": "mcp",
     "default_target": "comfy_3060",
-    "allowed_targets": ["comfy_5090", "comfy_3060"],
+    "allowed_targets": ["comfy_3060", "comfy_4080s", "comfy_5090"],
     "generation_timeout_seconds": 240,
     "poll_slice_seconds": 20,
     "registry_path": "registry/workflows.json"

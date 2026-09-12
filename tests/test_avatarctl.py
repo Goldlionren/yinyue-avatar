@@ -143,6 +143,69 @@ class AvatarCtlTests(unittest.TestCase):
             {"outfit": "运动套装", "top": "", "bottom": "", "dress": ""},
         )
 
+    def test_mcp_target_switch_is_atomic_preserves_local_config_and_keeps_backup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_path = root / "config.local.json"
+            local = {
+                "telegram": {"default_channel": "telegram:test"},
+                "execution": {"mode": "mcp"},
+            }
+            avatarctl.atomic_write_json(local_path, local)
+            config = avatarctl.deep_merge(self.config, local)
+            config["runtime"]["state_dir"] = str(root / "state")
+            with mock.patch.object(avatarctl, "LOCAL_CONFIG_PATH", local_path):
+                before = avatarctl.cmd_mcp_target(config)
+                result = avatarctl.cmd_mcp_target(config, "5090")
+            saved = avatarctl.load_json(local_path)
+            backups = list((root / "state/config-backups").glob("*.json"))
+            backup_value = avatarctl.load_json(backups[0])
+
+        self.assertEqual(before["default_target"], "comfy_3060")
+        self.assertEqual(result["default_target"], "comfy_5090")
+        self.assertEqual(result["previous_target"], "comfy_3060")
+        self.assertTrue(result["updated"])
+        self.assertEqual(saved["telegram"]["default_channel"], "telegram:test")
+        self.assertEqual(saved["execution"]["mode"], "mcp")
+        self.assertEqual(saved["execution"]["default_target"], "comfy_5090")
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backup_value, local)
+
+    def test_mcp_target_rejects_unknown_value_without_changing_local_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = Path(tmp) / "config.local.json"
+            avatarctl.atomic_write_json(local_path, {"execution": {"mode": "mcp"}})
+            before = local_path.read_bytes()
+            config = copy.deepcopy(self.config)
+            config["runtime"]["state_dir"] = str(Path(tmp) / "state")
+            with mock.patch.object(avatarctl, "LOCAL_CONFIG_PATH", local_path):
+                with self.assertRaisesRegex(avatarctl.AvatarError, "可选值"):
+                    avatarctl.cmd_mcp_target(config, "4090")
+            self.assertEqual(local_path.read_bytes(), before)
+
+    def test_mcp_target_same_selection_is_a_noop_without_backup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = Path(tmp) / "config.local.json"
+            avatarctl.atomic_write_json(
+                local_path,
+                {"execution": {"mode": "mcp", "default_target": "comfy_3060"}},
+            )
+            before = local_path.read_bytes()
+            config = copy.deepcopy(self.config)
+            config["runtime"]["state_dir"] = str(Path(tmp) / "state")
+            with mock.patch.object(avatarctl, "LOCAL_CONFIG_PATH", local_path):
+                result = avatarctl.cmd_mcp_target(config, "3060")
+            self.assertEqual(local_path.read_bytes(), before)
+            self.assertFalse(result["updated"])
+            self.assertEqual(result["backup"], "")
+            self.assertFalse((Path(tmp) / "state/config-backups").exists())
+
+    def test_mcp_target_cli_accepts_show_and_three_short_names(self) -> None:
+        parser = avatarctl.build_parser()
+        self.assertEqual(parser.parse_args(["mcp-target"]).target, "")
+        for target in ("3060", "4080s", "5090"):
+            self.assertEqual(parser.parse_args(["mcp-target", target]).target, target)
+
     def test_delivery_sends_text_and_media_separately(self) -> None:
         calls: list[str] = []
 

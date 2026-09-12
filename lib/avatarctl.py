@@ -51,6 +51,15 @@ CONFIG_PATH = SKILL_ROOT / "config.json"
 LOCAL_CONFIG_PATH = SKILL_ROOT / "config.local.json"
 WORKER_ACTION = "_worker"
 GENERATION_SAY = "奴家已经按照主人的吩咐摆好姿势了，请主人观赏~"
+MCP_TARGET_ALIASES = {
+    "3060": "comfy_3060",
+    "4080s": "comfy_4080s",
+    "5090": "comfy_5090",
+    "comfy_3060": "comfy_3060",
+    "comfy_4080s": "comfy_4080s",
+    "comfy_5090": "comfy_5090",
+}
+MCP_TARGET_ORDER = ("comfy_3060", "comfy_4080s", "comfy_5090")
 
 
 class AvatarError(RuntimeError):
@@ -2054,6 +2063,112 @@ def cmd_workflow_info(config: dict[str, Any], workflow_id: str) -> dict[str, Any
     return {"ok": True, "workflow": workflow}
 
 
+def normalize_mcp_target(value: str) -> str:
+    target = MCP_TARGET_ALIASES.get(str(value or "").strip().lower(), "")
+    if not target:
+        raise AvatarError("未知 MCP 目标；可选值：3060、4080s、5090")
+    return target
+
+
+def _mcp_target_payload(config: dict[str, Any], *, updated: bool = False) -> dict[str, Any]:
+    registry = workflow_registry(config)
+    workflow = registry["workflows"].get("yinyue_cosplay01", {})
+    allowed = set(config.get("execution", {}).get("allowed_targets", []))
+    options = []
+    for target in MCP_TARGET_ORDER:
+        target_cfg = registry["targets"].get(target, {})
+        status = workflow.get("target_status", {}).get(target, {})
+        statically_verified = bool(status.get("workflow_exists")) and bool(
+            status.get("interface_verified")
+        )
+        runtime_preflight = bool(status.get("runtime_preflight_allowed"))
+        options.append(
+            {
+                "label": target.removeprefix("comfy_"),
+                "target": target,
+                "selected": target == config["execution"]["default_target"],
+                "enabled": bool(target_cfg.get("enabled", True)) and target in allowed,
+                "readiness": (
+                    "verified"
+                    if statically_verified
+                    else "runtime_preflight"
+                    if runtime_preflight
+                    else "unavailable"
+                ),
+                "remote_root": str(target_cfg.get("remote_root", "")),
+                "reason": str(status.get("reason", "")),
+            }
+        )
+    return {
+        "ok": True,
+        "updated": updated,
+        "default_target": config["execution"]["default_target"],
+        "options": options,
+    }
+
+
+def cmd_mcp_target(config: dict[str, Any], selection: str = "") -> dict[str, Any]:
+    """Show or atomically persist the strict MCP target for future transactions."""
+    if not selection:
+        return _mcp_target_payload(config)
+    target = normalize_mcp_target(selection)
+    allowed = set(config.get("execution", {}).get("allowed_targets", []))
+    registry = workflow_registry(config)
+    if target not in allowed or target not in registry["targets"]:
+        raise AvatarError(f"MCP 目标未启用：{target}")
+
+    state_root = Path(os.path.expanduser(config["runtime"]["state_dir"]))
+    state_root.mkdir(parents=True, exist_ok=True)
+    backup = ""
+    with exclusive_lock(state_root / "config.lock"):
+        if LOCAL_CONFIG_PATH.is_symlink():
+            raise AvatarError("config.local.json 不得是符号链接")
+        if LOCAL_CONFIG_PATH.is_file():
+            local = load_json(LOCAL_CONFIG_PATH)
+            if not isinstance(local, dict):
+                raise AvatarError("config.local.json 必须是 JSON 对象")
+        else:
+            local = {}
+        execution = local.get("execution")
+        if execution is None:
+            execution = {}
+            local["execution"] = execution
+        if not isinstance(execution, dict):
+            raise AvatarError("config.local.json 的 execution 必须是 JSON 对象")
+        base_config = load_json(CONFIG_PATH)
+        if not isinstance(base_config, dict):
+            raise AvatarError("config.json 必须是 JSON 对象")
+        previous_target = str(
+            deep_merge(base_config, local)["execution"]["default_target"]
+        )
+        if target == previous_target:
+            effective = copy.deepcopy(config)
+            effective["execution"]["default_target"] = target
+            result = _mcp_target_payload(effective, updated=False)
+            result["previous_target"] = previous_target
+            result["backup"] = ""
+            return result
+        if LOCAL_CONFIG_PATH.is_file():
+            backup_dir = state_root / "config-backups"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            backup_path = backup_dir / (
+                f"config.local-before-mcp-{stamp}-{uuid.uuid4().hex[:8]}.json"
+            )
+            shutil.copy2(LOCAL_CONFIG_PATH, backup_path)
+            os.chmod(backup_path, 0o600)
+            backup = str(backup_path)
+        execution["default_target"] = target
+        atomic_write_json(LOCAL_CONFIG_PATH, local)
+
+    effective = copy.deepcopy(config)
+    effective["execution"]["default_target"] = target
+    result = _mcp_target_payload(effective, updated=target != previous_target)
+    result["previous_target"] = previous_target
+    result["backup"] = backup
+    return result
+
+
 def cmd_transaction_status(config: dict[str, Any], transaction_id: str) -> dict[str, Any]:
     return load_transaction(ensure_runtime(config), transaction_id)
 
@@ -2811,6 +2926,8 @@ def build_parser() -> argparse.ArgumentParser:
     workflow_info = sub.add_parser("workflow-info")
     workflow_info.add_argument("workflow_id")
     sub.add_parser("mcp-status")
+    mcp_target = sub.add_parser("mcp-target")
+    mcp_target.add_argument("target", nargs="?", default="")
 
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--intent", required=True)
@@ -3045,6 +3162,8 @@ def main() -> int:
             result = cmd_workflow_info(config, args.workflow_id)
         elif args.command == "mcp-status":
             result = cmd_mcp_status(config)
+        elif args.command == "mcp-target":
+            result = cmd_mcp_target(config, args.target)
         elif args.command == "prepare":
             result = cmd_prepare(
                 config,

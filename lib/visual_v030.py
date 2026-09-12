@@ -339,17 +339,21 @@ def select_target(
 ) -> str:
     allowed = list(workflow["allowed_targets"])
     candidates: list[str] = []
-    if requested_target:
-        if requested_target not in registry["targets"]:
-            raise VisualSystemError(f"未知 MCP target：{requested_target}")
-        if requested_target not in allowed:
+    selected = requested_target or default_target
+    if selected:
+        if selected not in registry["targets"]:
+            raise VisualSystemError(f"未知 MCP target：{selected}")
+        if selected not in allowed:
             raise VisualSystemError(
-                f"workflow {workflow['id']} 不允许 target {requested_target}"
+                f"workflow {workflow['id']} 不允许 target {selected}"
             )
-        candidates.append(requested_target)
+        # Both an explicit per-request target and the persisted default are
+        # strict selections.  Never make a user's GPU switch look successful
+        # while silently sending the image to another host.
+        candidates.append(selected)
     else:
         preferred = workflow.get("preferred_target", "")
-        candidates.extend([preferred, default_target, *allowed])
+        candidates.extend([preferred, *allowed])
     seen: set[str] = set()
     reasons: list[str] = []
     for target in candidates:
@@ -358,8 +362,17 @@ def select_target(
         seen.add(target)
         target_cfg = registry["targets"].get(target, {})
         status = workflow["target_status"].get(target, {})
-        ready = bool(target_cfg.get("enabled", True)) and bool(status.get("workflow_exists"))
-        ready = ready and bool(status.get("interface_verified"))
+        statically_verified = bool(status.get("workflow_exists")) and bool(
+            status.get("interface_verified")
+        )
+        # Intermittent GPU hosts may be selected while powered off.  Their
+        # text-to-image workflow is allowed to enter the executor's mandatory
+        # server/variant/slot preflight, but run_workflow is still unreachable
+        # until that preflight succeeds.
+        preflight_allowed = bool(status.get("runtime_preflight_allowed"))
+        ready = bool(target_cfg.get("enabled", True)) and (
+            statically_verified or preflight_allowed
+        )
         path = workflow["remote_paths"].get(target, "")
         if ready and path:
             return target

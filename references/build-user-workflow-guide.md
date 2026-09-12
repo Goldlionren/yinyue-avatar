@@ -1,6 +1,6 @@
 # yinyue-avatar 构建、用户使用与 ComfyUI Workflow 升级指南
 
-适用版本：`yinyue-avatar 0.3.10`  
+适用版本：`yinyue-avatar 0.3.11`
 当前验证日期：2026-09-11  
 当前生产目标：`comfy_3060`
 
@@ -37,7 +37,7 @@ mcp_executor.py（确定性事务执行器）
   ↓
 registry/workflows.json（目标、路径、能力和 slot 绑定）
   ↓
-comfy_3060 MCP → ComfyUI Workflow → 图片
+所选 comfy_3060 / comfy_4080s / comfy_5090 MCP → ComfyUI Workflow → 图片
   ↓
 本地 commit → 持久状态/history → Telegram 投递
 ```
@@ -46,17 +46,18 @@ comfy_3060 MCP → ComfyUI Workflow → 图片
 
 | 项目 | 当前值 |
 |---|---|
-| Skill 版本 | `0.3.10` |
-| 视觉插件 | `yinyue-visual 1.3.1` |
+| Skill 版本 | `0.3.11` |
+| 视觉插件 | `yinyue-visual 1.4.0` |
 | Session 路由插件 | `yinyue-model-router 0.3.6` |
 | 执行模式 | `mcp` |
-| 默认目标 | `comfy_3060` |
+| 默认目标 | `comfy_3060`；可切换 `comfy_4080s` / `comfy_5090` |
 | 生产 Workflow ID | `yinyue_cosplay01` |
 | 3060 远程文件 | `D:\AI\YinyueAvatar\workflows\Krea2_YINYUE_cosplay01.json` |
+| 4080s / 5090 根目录 | `F:\AI\YinyueAvatar` |
 | 默认画幅 | `9:16` |
 | 默认像素量 | `1.5 MP` |
 
-已验证的 3060 业务 slot：
+三个目标均已验证的业务 slot：
 
 | 业务参数 | Workflow slot |
 |---|---|
@@ -67,7 +68,7 @@ comfy_3060 MCP → ComfyUI Workflow → 图片
 
 两个 seed slot 必须写入同一个事务 seed。不要依赖 ComfyUI 前端文件里的 `randomize` 标志，MCP 转换时不会替它执行随机化。
 
-`yinyue_edit01` 目前在 3060 和 5090 都未部署、未验证，因此不是当前可依赖的生产能力。局部修改缺少已验证编辑 Workflow 时会安全回退到完整重建。
+`yinyue_edit01` 目前在 3060、4080s 和 5090 都未部署、未验证，因此不是当前可依赖的生产能力。局部修改缺少已验证编辑 Workflow 时会安全回退到完整重建。
 
 ## 2. 构建与运行架构
 
@@ -158,7 +159,7 @@ Skill 之外还有两个 Hermes 运行时目录：
 - Linux 上的 Hermes Gateway 与 Hermes CLI。
 - Python 3.10 或更高版本；核心 helper 仅依赖 Python 标准库。
 - Bash；安全脚本测试和 staging 脚本还会使用 `jq`、`find`、`tar` 等系统工具。
-- 已在 Hermes 中配置的 `comfy_3060`/`comfy_5090` MCP server。
+- 已在 Hermes 中配置的 `comfy_3060`、`comfy_4080s`、`comfy_5090` MCP server。
 - GPU 主机上的 ComfyUI、所需模型/LoRA/自定义节点以及 frontend-format Workflow。
 - Telegram Gateway；其 toolset 中需要包含 `yinyue-avatar`。
 
@@ -292,7 +293,22 @@ hermes gateway status
 
 不要在生成较慢时反复发送同一个请求。一个事务已经提交后，系统会继续等待同一个 `prompt_id`；重复发送可能创建新的独立用户事务。
 
-### 4.3 查看结构化穿着状态
+### 4.3 选择图片 MCP 节点
+
+```text
+/yinyue-avatar mcp
+/yinyue-avatar mcp 3060
+/yinyue-avatar mcp 4080s
+/yinyue-avatar mcp 5090
+```
+
+- 默认使用 3060；4080s 和 5090 是按需开机节点。
+- 选择是严格目标，不会在失败时自动换到另一张卡。
+- 切换只影响之后创建的新事务；已提交事务继续绑定原 target 和 `prompt_id`。
+- 5090/4080s 会先检查服务、创建事务专属 variant 并核对业务 slots；核对失败时不会调用 `run_workflow`。
+- 每次切换会原子保留 `config.local.json` 的其他本机配置，并在 state 的 `config-backups/` 中留下切换前备份；切回 3060 即恢复默认路径。
+
+### 4.4 查看结构化穿着状态
 
 ```text
 /yinyue-avatar 穿着
@@ -316,7 +332,7 @@ hermes gateway status
 
 这条命令直接读取持久状态，不让语言模型猜测图片中的衣物。
 
-### 4.4 修改结构化穿着状态
+### 4.5 修改结构化穿着状态
 
 ```text
 /yinyue-avatar 穿着 设置 {"服装":"黑色西装","袜子":"黑色丝袜","鞋子":"黑色高跟鞋","配饰":""}
@@ -337,7 +353,7 @@ hermes gateway status
 - 中文键支持：`服装/整套服装`、`外套`、`上装`、`下装`、`连衣裙`、`腿部穿着/袜子`、`鞋子`、`头饰`、`配饰`。
 - 修改后如果希望看到新图片，再单独发送明确的拍照请求。
 
-### 4.5 重发上一张图片
+### 4.6 重发上一张图片
 
 Telegram 投递失败或只想重发最后结果时，不要重新生成。管理员可执行：
 
@@ -345,7 +361,7 @@ Telegram 投递失败或只想重发最后结果时，不要重新生成。管�
 bin/avatarctl resend-last --foreground
 ```
 
-### 4.6 管理员 CLI 快查
+### 4.7 管理员 CLI 快查
 
 ```bash
 bin/avatarctl wardrobe
@@ -353,6 +369,8 @@ bin/avatarctl status
 bin/avatarctl workflows
 bin/avatarctl workflow-info yinyue_cosplay01
 bin/avatarctl mcp-status
+bin/avatarctl mcp-target
+bin/avatarctl mcp-target 4080s
 bin/avatarctl history --last 10
 bin/avatarctl transaction-status TRANSACTION_ID
 bin/avatarctl doctor
@@ -463,7 +481,9 @@ scripts/deploy-workflow.sh \
   --apply
 ```
 
-该脚本会拒绝覆盖同名远程文件。如果同名已存在，应重新选择新文件名或先人工审计现有文件，不要绕过保护。
+该脚本支持 `comfy_3060`、`comfy_4080s`、`comfy_5090`，会创建缺失的
+`YinyueAvatar`、`workflows`、`temp`、`output` 目录，并拒绝覆盖同名远程文件。
+如果同名已存在，应重新选择新文件名或先人工审计现有文件，不要绕过保护。
 
 ### 6.6 第五步：真实检查远程 Workflow
 

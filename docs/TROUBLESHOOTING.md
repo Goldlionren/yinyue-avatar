@@ -6,9 +6,12 @@
 
 API export 出现 `workflow_not_frontend_format` 时，在 ComfyUI 用 `File > Save (As)` 保存 frontend format。不要伪造 slot address。
 
-## 5090 不可达
+## 按需 GPU 不可达
 
-保持其 `interface_verified=false`。Router 只会选择 registry 中已验证的其他 target；若没有则明确失败，不会盲跑。检查主机路由/SSH/MCP 后重新执行 server_info 和 workflow inspection。
+保持当前严格 target，不得自动换 GPU。检查主机电源、路由、SSH 和 MCP 后，重新执行
+`server_info`、`list_workflow_slots`、`validate_workflow` 和隔离 `vary_workflow`。如果 4080s
+出现 `cql_no_graph` / non-loopback SSRF 错误，确认其 MCP 的 `COMFY_LOCAL_URL` 使用
+`http://127.0.0.1:18818`，修改启动脚本前必须先备份。
 
 ## 已有 prompt_id 后超时
 

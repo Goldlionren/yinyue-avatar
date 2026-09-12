@@ -9,8 +9,8 @@ Workflow 内部负责人物模型、固定人物 LoRA、风格/画质词和 prom
 建议文件：
 
 ```text
-F:\AI\YinyueAvatar\workflows\yinyue_cosplay01.json  # 5090
-F:\AI\YinyueAvatar\workflows\yinyue_edit01.json
+F:\AI\YinyueAvatar\workflows\yinyue_cosplay01.json  # 5090 / 4080s
+F:\AI\YinyueAvatar\workflows\yinyue_edit01.json  # 5090 / 4080s
 D:\AI\YinyueAvatar\workflows\Krea2_YINYUE_cosplay01.json  # 3060 当前生产 frontend
 D:\AI\YinyueAvatar\workflows\yinyue_edit01.json
 ```
@@ -20,9 +20,12 @@ D:\AI\YinyueAvatar\workflows\yinyue_edit01.json
 MCP 没有通用的“上传任意 workflow JSON 到任意目录”工具；`upload_file` 只把 MCP 主机已有文件送入 ComfyUI input。使用人工复制，或 dry-run-first 工具：
 
 ```bash
-scripts/deploy-workflow.sh --target comfy_3060 --source /absolute/yinyue_cosplay01.json
-scripts/deploy-workflow.sh --target comfy_3060 --source /absolute/yinyue_cosplay01.json --apply
+scripts/deploy-workflow.sh --target comfy_4080s --source /absolute/yinyue_cosplay01.json
+scripts/deploy-workflow.sh --target comfy_4080s --source /absolute/yinyue_cosplay01.json --apply
 ```
+
+目标可选 `comfy_3060`、`comfy_4080s`、`comfy_5090`。`--apply` 会创建缺失的
+`YinyueAvatar/workflows`、`temp`、`output` 目录，但检测到同名远端 Workflow 时会拒绝覆盖。
 
 工具拒绝覆盖已存在文件。部署后依次用对应 MCP 调用：
 
@@ -50,6 +53,8 @@ validate_workflow(workflow_path=...)
 2. 在 registry `targets` 添加 MCP 名称、remote root/output root 和 rank。
 3. 在每个可用 Workflow 添加 allowed target、remote path、已验证 status。
 4. 将 target 加入 `config.json` 的 `execution.allowed_targets`，按需改 default target。
+
+5090/4080s 这类按需开机节点可在 text-to-image status 中设置 `runtime_preflight_allowed=true`。这只允许进入 `server_info → vary_workflow → list_workflow_slots` 提交前检查；slot 不完整或主机离线时不得调用 `run_workflow`，也不得自动换 target。
 
 ## 为什么没有 SHA baseline
 

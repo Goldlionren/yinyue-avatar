@@ -13,6 +13,15 @@ trap cleanup EXIT
 
 INSTALL="$SKILL_ROOT/scripts/install.sh"
 DEST="$TEST_HOME/.hermes/skills/roleplay/yinyue-avatar"
+DEPLOY="$SKILL_ROOT/scripts/deploy-workflow.sh"
+
+# Workflow deployment is dry-run by default and accepts every registered GPU.
+for target in comfy_3060 comfy_4080s comfy_5090; do
+  bash "$DEPLOY" --target "$target" \
+    --source "$SKILL_ROOT/workflow/Krea2_YINYUE_cosplay01.json" \
+    --name yinyue_cosplay01.json > "$TEST_ROOT/deploy-$target-dry.txt"
+  grep -q 'DRY RUN ONLY' "$TEST_ROOT/deploy-$target-dry.txt"
+done
 
 # Dry-run must not write.
 HOME="$TEST_HOME" bash "$INSTALL" > "$TEST_ROOT/install-dry.txt"
